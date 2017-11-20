@@ -6,12 +6,11 @@ import java.util.List;
 
 import com.marklogic.bulkload.Logger;
 import com.marklogic.bulkload.ReaderWriterQueue;
+import com.marklogic.bulkload.convert.DocumentFormatConverter;
+import com.marklogic.bulkload.convert.FormatConverter;
+import com.marklogic.bulkload.convert.UnparsedLinesWriteConverter;
 import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.xcc.ContentSource;
-
-import convert.DocumentFormatConverter;
-import convert.FormatConverter;
-import convert.UnparsedLinesWriteConverter;
 
 /**
  * Consumes data from a shared queue and writes it. 

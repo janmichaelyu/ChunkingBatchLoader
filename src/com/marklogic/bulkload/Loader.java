@@ -7,17 +7,28 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.marklogic.bulkload.convert.DocumentFormatConverter;
+import com.marklogic.bulkload.convert.FormatConverter;
+import com.marklogic.bulkload.convert.SummaryInfo;
+import com.marklogic.bulkload.convert.UnparsedLinesWriteConverter;
+import com.marklogic.bulkload.read.MultilineBufferedReader;
+import com.marklogic.bulkload.write.LineQueueConsumer;
+import com.marklogic.bulkload.write.XccAllAsJSONToMLSvcChunkWriter;
+import com.marklogic.bulkload.write.XccChunkWriter;
+import com.marklogic.bulkload.write.XccRawLinesInJSONStructureChunkWriter;
 import com.marklogic.xcc.ContentSource;
 import com.marklogic.xcc.ContentSourceFactory;
 
-public class Loader {
+public class Loader<T> {
 
-	static final Logger logger = new Logger();
+	static final Logger logger = new Logger(Loader.class);
 
 	private static final int QUEUE_SIZE = 64; // the queue to hold read lines. max no before blocking
 	
@@ -34,18 +45,26 @@ public class Loader {
 	String user = "admin"; // TODO hard coded
 	String pass = "admin"; // TODO hard coded
 	
-	List<XCCLineWriter> writers = new ArrayList<XCCLineWriter>();
+	List<LineQueueConsumer<T>> writers = new ArrayList<LineQueueConsumer<T>>();
 	List<Thread> writerThreads = new ArrayList<Thread>();
 	
 	// helper classes
-	DocumentWriteConverter converter; // turns strigns to json
+	FormatConverter<T> converter; // turns strigns to json
 	List<ContentSource> contentSources; // xcc class for connections
 	
 	final ReaderWriterQueue<List<String>> linesQueue;
 
-	protected String[] collections;
+	protected String[] collections = new String[] {"Inpatient", "TESTING"};
 
 	protected Set<String> columnsOfInterest;
+	
+	private enum ConfigType {RawLinesToDSH, JSONPerItem, JSONForAllItemsInChunk};
+	
+	private static final ConfigType CONFIG_TYPE = ConfigType.RawLinesToDSH;  // DRIVES THE OVERALL CONFIG
+
+	private XccChunkWriter<T> chunkWriter;
+	
+	public static final boolean TEST_MODE = true;
 	
 	public static void main(String[] args) {
         
@@ -84,24 +103,25 @@ public class Loader {
 		  
 	    waitForLoaderThreadComplete(lt);
    
-	    waitForAllWritersComplete(loader, writerThreads);    
+	    loader.waitForAllWritersComplete(loader, writerThreads);    
 	    
 	    long stop = System.currentTimeMillis();
 	    System.out.println("DONE! active time = "+(stop-start)+" ms");
 
-	    logger.info("Sanity check: all lines written="+XCCLineWriter.allLinesWritten.size());
+	    logger.info("Sanity check: all lines written="+LineQueueConsumer.allLinesWritten.size());
 	    logger.info("Sanity check: all gets="+loader.linesQueue.totGet);
 	    logger.info("Sanity check: all PUTs="+loader.linesQueue.totPut);
 	    
 	}
 
-	private static void waitForAllWritersComplete(Loader loader, List<Thread> writerThreads) {
+	private void waitForAllWritersComplete(Loader loader, List<Thread> writerThreads) {
 		for (;;) {
 	    	loader.linesQueue.alowAnotherGet(); // for each thread, let it wake up and do another check to see the queue is marked for completion
 	    	// TESTING DELAY - see how it runs for a slow reader     try {Thread.sleep(5);} catch (InterruptedException ex) {}
 	    	boolean allDone = true;
-	    	for (XCCLineWriter writer : loader.writers) {
-	    		if (writer != null && !writer.done) { allDone=false; }
+	    	for(int i=0; i< writers.size();i++) {
+	    		LineQueueConsumer<T> writer = writers.get(i);
+	    		if (writer != null && !writer.isDone()) { allDone=false; }
 	    	}
 	    	if (allDone) break;
 	    }
@@ -129,6 +149,7 @@ public class Loader {
 	    // Summary info is basically the envelope header
 	    SummaryInfo summary = new SummaryInfo(
 	    		entityName,
+	    		Arrays.asList(collections),
 	    		"TODOSourceDescInLoader", // TODO find this
 	    		pathString,
 	    		pathString,
@@ -137,14 +158,27 @@ public class Loader {
 	    		"TODOIMportID" // TODO find this
 	    		);
 	    
-	    // bulds the envelope with headers, and adds collections, URI etc.
-	    converter  = new DocumentWriteConverter(
-	    		headers, idColumnIndex, summary.getEntityName(), collections, 
-	    		columnsOfInterest, summary);
-
 	    contentSources = getContentSources();
-	    
-		
+
+	    // Abstract Factory Pattern - build all the related subclasses that work together (e.g. writer and converter must match)
+
+	    // Converter: builds the envelope with headers, and adds collections, URI etc.
+	    if (CONFIG_TYPE == ConfigType.RawLinesToDSH ) {
+	    	converter  = (FormatConverter<T>) new UnparsedLinesWriteConverter(headers, idColumnIndex, columnsOfInterest, summary); 
+	    	chunkWriter = (XccChunkWriter<T>) new XccRawLinesInJSONStructureChunkWriter(contentSources);
+	    }
+	    else if (CONFIG_TYPE == ConfigType.JSONPerItem ) {
+	    	converter  = (FormatConverter<T>) new DocumentFormatConverter(headers, idColumnIndex, columnsOfInterest, summary);
+	    	chunkWriter = null; // copy from other branch?  per-item process where we use xcc.insertContent(content[]) is lost
+	    	throw new UnsupportedOperationException("Cannot do JSONPerItem right now");
+	    }
+	    else if (CONFIG_TYPE == ConfigType.JSONForAllItemsInChunk ) {
+	    	converter  = (FormatConverter<T>) new DocumentFormatConverter(headers, idColumnIndex, columnsOfInterest, summary);
+	    	chunkWriter = (XccChunkWriter<T>) new XccAllAsJSONToMLSvcChunkWriter(contentSources);
+	    }
+	    else
+	    	throw new RuntimeException("Unknown configuration type: "+CONFIG_TYPE);
+	    		
 	}
 	
 	// TODO hardcoded at three sources !!
@@ -202,9 +236,10 @@ public class Loader {
 	public List<Thread> startWriterThread(
 					ReaderWriterQueue<List<String>> linesQueue, int i) {
 	    Runnable r = new Runnable() {
+
 			@Override
 			public void run() {
-				XCCLineWriter writer = new XCCLineWriter(linesQueue, i, batchSize, converter, contentSources); // TODO to support alternate write strategies, make an interface LineWriter
+				LineQueueConsumer writer = new LineQueueConsumer(linesQueue, batchSize, converter, chunkWriter, contentSources); // TODO to support alternate write strategies, make an interface LineWriter
 				writers.add(writer); // So we can stop them later
 				writer.writeTillDone();
 			}

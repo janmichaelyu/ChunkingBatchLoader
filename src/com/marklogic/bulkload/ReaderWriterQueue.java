@@ -13,7 +13,7 @@ public class ReaderWriterQueue<T> {
 	 int totPut = 0;
 	 int totGet = 0;
 	
-	private static final Logger logger = new Logger();
+	private static final Logger logger = new Logger(ReaderWriterQueue.class);
 	
 	private short maxSize;
 	private boolean loadingOver=false; // set to true when there is no more data expected

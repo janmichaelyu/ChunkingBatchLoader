@@ -68,7 +68,7 @@ public class DocumentWriteConverter {
         if (id != null && "".equals(id)) {
             id = "MISSING";
         }
-        logger.info("id: "+id);
+//        logger.info("id: "+id);
         String uri = "/" + entityName + "/" + id + "_" + UUID.randomUUID().toString() + ".json";
 
         String doc = serializeItem(id, subItems); // group the items into one overall JSON record

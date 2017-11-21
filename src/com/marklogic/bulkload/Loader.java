@@ -136,6 +136,7 @@ public class Loader {
 
 		user = properties.getProperty("username");
 		pass = properties.getProperty("password");
+		host = properties.getProperty("mlHost");
 
 		port = Integer.parseInt(properties.getProperty("port"));
 		idColumnIndex = Integer.parseInt(properties.getProperty("idColumnIndex"));

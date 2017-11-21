@@ -142,9 +142,9 @@ public class Loader {
 		pass = properties.getProperty("password");
 		String [] hosts = properties.getProperty("mlHost").split(",");
 
-		host1 = hosts[1];
-		host2 = hosts[2];
-		host3 = hosts[3];
+		host1 = hosts[0];
+		host2 = hosts[1];
+		host3 = hosts[2];
 
 		port = Integer.parseInt(properties.getProperty("port"));
 		idColumnIndex = Integer.parseInt(properties.getProperty("idColumnIndex"));

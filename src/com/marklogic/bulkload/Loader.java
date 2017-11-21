@@ -12,7 +12,7 @@ public class Loader {
 
 	static final Logger logger = new Logger();
 
-	private static final int QUEUE_SIZE = 64; // the queue to hold read lines. max no before blocking
+	private static int QUEUE_SIZE = 64; // the queue to hold read lines. max no before blocking
 	
 	static  String pathString = "/temp/inpatientLarger.txt"; // TODO hard coded !!
 
@@ -63,6 +63,8 @@ public class Loader {
 
 		pathString = prop.getProperty("pathString");
 
+		QUEUE_SIZE = Integer.parseInt(prop.getProperty("QUEUE_SIZE"));
+
 		int threadCount = 16; // hardcoded !!
 		String threadStr = prop.getProperty("writerThreads");
 		threadCount = Integer.parseInt(threadStr);
@@ -99,7 +101,7 @@ public class Loader {
 	    long stop = System.currentTimeMillis();
 	    System.out.println("DONE! active time = "+(stop-start)+" ms");
 
-	    logger.info("Sanity check: all lines written="+XCCLineWriter.allLinesWritten.size());
+//	    logger.info("Sanity check: all lines written="+XCCLineWriter.allLinesWritten.size());
 	    logger.info("Sanity check: all gets="+loader.linesQueue.totGet);
 	    logger.info("Sanity check: all PUTs="+loader.linesQueue.totPut);
 	    

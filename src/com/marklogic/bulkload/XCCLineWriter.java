@@ -15,7 +15,7 @@ import com.marklogic.xcc.ContentSource;
 
 public class XCCLineWriter {
 
-	public static List<String> allLinesWritten = Collections.synchronizedList(new ArrayList());  // for debugging see if all the lines made it
+//	public static List<String> allLinesWritten = Collections.synchronizedList(new ArrayList());  // for debugging see if all the lines made it
 	boolean done; // signal the  main thread that we can exit
 	
 	private ReaderWriterQueue<List<String>> lineQueue;
@@ -75,7 +75,7 @@ public class XCCLineWriter {
 			
 			// DEBUG ONLY 
 			// TODO: remove for faster performance
-			allLinesWritten.addAll(linesForOneDoc);
+//			allLinesWritten.addAll(linesForOneDoc);
 
 		}
 	}

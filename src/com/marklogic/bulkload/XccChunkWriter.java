@@ -55,7 +55,7 @@ public abstract class XccChunkWriter {
 		
 		synchronized(XccChunkWriter.class) {
 			count += items.size(); 
-			logger.info("total processed by xccbatchwriter ="+count+" xcclinewrit.alllines="+XCCLineWriter.allLinesWritten.size());
+//			logger.info("total processed by xccbatchwriter ="+count+" xcclinewrit.alllines="+XCCLineWriter.allLinesWritten.size());
 		}
 	
 	}

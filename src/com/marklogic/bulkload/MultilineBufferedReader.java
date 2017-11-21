@@ -50,12 +50,12 @@ public class MultilineBufferedReader {
         }
     }
 
-    public void readLnesToQueue(ReaderWriterQueue<List<String>> linesQueue)  {
+    public void readLinesToQueue(ReaderWriterQueue<List<String>> linesQueue)  {
     		// csvFile is already open, and header has been read off already
-    		readLnesToQueueONCE(linesQueue);
+    		readLinesToQueueONCE(linesQueue);
     }
     
-    public void readLnesToQueueONCE(ReaderWriterQueue<List<String>> linesQueue)  {
+    public void readLinesToQueueONCE(ReaderWriterQueue<List<String>> linesQueue)  {
         logger.info("Reading");
 
         List<String> linesChunk = new ArrayList<String>(32);
@@ -86,7 +86,7 @@ public class MultilineBufferedReader {
         		if ("".equals(id)) 
         			id = "MISSING_ID";
         		
-                if ((id != null && id.equals(previousId)) || firstLine || (Math.random() > 0.1)) { // same id, or very first ID in the file, then add
+                if ((id != null && id.equals(previousId)) || firstLine) { // same id, or very first ID in the file, then add
                 	linesChunk.add(line); // accumulate in this chunk of lines, grouped by ID
                 }
                 else {

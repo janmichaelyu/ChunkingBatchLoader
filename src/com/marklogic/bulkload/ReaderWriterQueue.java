@@ -73,7 +73,7 @@ public class ReaderWriterQueue<T> {
 	
 
 	/** if this is blocked at the end of the process, the caller may explicitly tell it to read a littel more to see if the process is done */
-	public void alowAnotherGet() {
+	public void allowAnotherGet() {
 		get.release();
 	}
 }

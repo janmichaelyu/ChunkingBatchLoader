@@ -25,7 +25,9 @@ public class Loader {
 
 	private String entityName = "drug"; // TODO hard coded !!
 	
-	String host = "localhost"; // TODO hard coded
+	String host1 = "localhost"; // TODO hard coded
+	String host2 = "localhost"; // TODO hard coded
+	String host3 = "localhost"; // TODO hard coded
 
 	int port = 8000; // TODO hard coded
 
@@ -44,7 +46,7 @@ public class Loader {
 	protected String[] collections;
 
 	protected Set<String> columnsOfInterest;
-	
+
 	public static void main(String[] args) {
 
 		// TODO add collection
@@ -138,7 +140,11 @@ public class Loader {
 
 		user = properties.getProperty("username");
 		pass = properties.getProperty("password");
-		host = properties.getProperty("mlHost");
+		String [] hosts = properties.getProperty("mlHost").split(",");
+
+		host1 = hosts[1];
+		host2 = hosts[2];
+		host3 = hosts[3];
 
 		port = Integer.parseInt(properties.getProperty("port"));
 		idColumnIndex = Integer.parseInt(properties.getProperty("idColumnIndex"));
@@ -181,9 +187,9 @@ public class Loader {
 	
 	// TODO hardcoded at three sources !!
 	private List<ContentSource> getContentSources() {
-		ContentSource cs1 = ContentSourceFactory. newContentSource(host, port, user, pass);
-		ContentSource cs2 = ContentSourceFactory. newContentSource(host, port, user, pass);
-		ContentSource cs3 = ContentSourceFactory. newContentSource(host, port, user, pass);
+		ContentSource cs1 = ContentSourceFactory. newContentSource(host1, port, user, pass);
+		ContentSource cs2 = ContentSourceFactory. newContentSource(host2, port, user, pass);
+		ContentSource cs3 = ContentSourceFactory. newContentSource(host3, port, user, pass);
 		List<ContentSource> sources = new ArrayList<ContentSource>();
 		sources.add(cs1);
 		sources.add(cs2);

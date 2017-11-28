@@ -132,10 +132,11 @@ public class DocumentWriteConverter {
                     {
                         dateText = (String) rawInstance.get(key);
 //                            4/11/2017
+                        if (dateText!= null) {
+                            Date date = dateFormatParser.parse(dateText);
+                            instanceObject.put(key+"_CONVERTED",dateFormatter.format(date));
+                        }
 
-                        Date date = dateFormatParser.parse(dateText);
-
-                        instanceObject.put(key+"_CONVERTED",dateFormatter.format(date));
                     } catch (Exception e) {
                         logger.warn("Error formatting date: '" +dateText + "' " + e.toString());
                     }
